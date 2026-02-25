@@ -35,7 +35,7 @@ export default function NovoTreinoPage() {
     );
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const now = new Date().toISOString();
     const treino: Treino = {
@@ -62,7 +62,7 @@ export default function NovoTreinoPage() {
       criadoEm: now,
       atualizadoEm: now,
     };
-    saveTreino(treino);
+    await saveTreino(treino);
     router.push("/");
   }
 

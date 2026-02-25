@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTreinos } from "@/hooks/useTreinos";
-import { storage } from "@/lib/storage";
+import { api } from "@/lib/api";
 import type { Exercicio, Serie, Treino } from "@/lib/types";
 
 export default function TreinoDetailPage() {
@@ -16,8 +16,14 @@ export default function TreinoDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    const t = getById(id) ?? storage.getById(id);
-    setTreino(t ?? null);
+    const fromList = getById(id);
+    if (fromList) {
+      setTreino(fromList);
+      return;
+    }
+    if (loaded) {
+      api.getTreino(id).then((t) => setTreino(t ?? null));
+    }
   }, [id, loaded, getById]);
 
   const updateTreino = useCallback(
@@ -25,7 +31,7 @@ export default function TreinoDetailPage() {
       if (!treino) return;
       const next = updater(treino);
       setTreino(next);
-      saveTreino(next);
+      saveTreino(next).catch(() => {});
     },
     [treino, saveTreino]
   );
@@ -53,9 +59,9 @@ export default function TreinoDetailPage() {
     [updateTreino]
   );
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (confirmDelete) {
-      deleteTreino(id);
+      await deleteTreino(id);
       router.push("/");
     } else {
       setConfirmDelete(true);

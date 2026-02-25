@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTreinos } from "@/hooks/useTreinos";
-import { storage } from "@/lib/storage";
+import { api } from "@/lib/api";
 import { gerarId } from "@/lib/utils";
 import type { Exercicio, Serie, Treino } from "@/lib/types";
 
@@ -20,19 +20,33 @@ export default function EditarTreinoPage() {
   >([]);
 
   useEffect(() => {
-    const t = getById(id) ?? storage.getById(id);
-    if (t) {
-      setTreino(t);
-      setNome(t.nome);
+    const fromList = getById(id);
+    if (fromList) {
+      setTreino(fromList);
+      setNome(fromList.nome);
       setExercicios(
-        t.exercicios.map((ex) => ({
+        fromList.exercicios.map((ex) => ({
           id: ex.id,
           nome: ex.nome,
           quantidadeSeries: ex.series.length,
         }))
       );
-    } else {
-      setTreino(null);
+      return;
+    }
+    if (loaded) {
+      api.getTreino(id).then((t) => {
+        if (t) {
+          setTreino(t);
+          setNome(t.nome);
+          setExercicios(
+            t.exercicios.map((ex) => ({
+              id: ex.id,
+              nome: ex.nome,
+              quantidadeSeries: ex.series.length,
+            }))
+          );
+        } else setTreino(null);
+      });
     }
   }, [id, loaded, getById]);
 
@@ -54,7 +68,7 @@ export default function EditarTreinoPage() {
     );
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!treino) return;
     const exerciciosAtualizados: Exercicio[] = exercicios
@@ -94,7 +108,7 @@ export default function EditarTreinoPage() {
       exercicios: exerciciosAtualizados,
       atualizadoEm: new Date().toISOString(),
     };
-    saveTreino(updated);
+    await saveTreino(updated);
     router.push(`/treino/${id}`);
   }
 

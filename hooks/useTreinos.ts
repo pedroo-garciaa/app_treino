@@ -1,16 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { storage } from "@/lib/storage";
+import { api } from "@/lib/api";
 import type { Treino } from "@/lib/types";
 
 export function useTreinos() {
   const [treinos, setTreinos] = useState<Treino[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setTreinos(storage.getAll());
-    setLoaded(true);
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await api.getTreinos();
+      setTreinos(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao carregar treinos");
+      setTreinos([]);
+    } finally {
+      setLoaded(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -18,18 +27,18 @@ export function useTreinos() {
   }, [load]);
 
   const saveTreino = useCallback(
-    (treino: Treino) => {
-      const saved = storage.save(treino);
-      load();
+    async (treino: Treino): Promise<Treino> => {
+      const saved = await api.saveTreino(treino);
+      await load();
       return saved;
     },
     [load]
   );
 
   const deleteTreino = useCallback(
-    (id: string) => {
-      storage.delete(id);
-      load();
+    async (id: string) => {
+      await api.deleteTreino(id);
+      await load();
     },
     [load]
   );
@@ -42,6 +51,7 @@ export function useTreinos() {
   return {
     treinos,
     loaded,
+    error,
     saveTreino,
     deleteTreino,
     getById,
