@@ -46,7 +46,20 @@ npx next start -H 0.0.0.0 -p 8080
 
 4. O banco SQLite é criado automaticamente na pasta `data/` (arquivo `data/treino.db`). Mantenha essa pasta com permissão de escrita pelo usuário que roda o processo.
 
-5. (Opcional) Atrás de um proxy reverso (nginx, Caddy, etc.), aponte para `http://localhost:3000`.
+5. (Opcional) Atrás de um proxy reverso (nginx, Caddy, etc.), aponte para `http://localhost:3005`.
+
+## Imagem Docker (GitHub Packages)
+
+O workflow **Build and push Docker image to GitHub Packages** gera a imagem em cada push na branch `main` e publica em **GitHub Container Registry** (Packages).
+
+- **Imagem:** `ghcr.io/pedroo-garciaa/app_treino`
+- Para rodar localmente (com volume para o banco):
+
+```bash
+docker run -d -p 3005:3005 -v app_treino_data:/app/data --name app-treino ghcr.io/pedroo-garciaa/app_treino:latest
+```
+
+Acesse em `http://localhost:3005`. Para usar a imagem privada do GitHub, faça login: `docker login ghcr.io -u SEU_USUARIO -p SEU_PAT`.
 
 ## Build
 
