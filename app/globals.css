@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0c0a09;
+  --surface: #1c1917;
+  --surface-card: #292524;
+  --border: #44403c;
+  --text: #fafaf9;
+  --muted: #a8a29e;
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+}
+
+body {
+  @apply bg-[var(--bg)] text-[var(--text)] antialiased;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+input, select, button {
+  @apply outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-[var(--bg)];
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 shadow-lg;
+  }
+  .btn-primary {
+    @apply rounded-lg bg-accent px-4 py-2 font-medium text-white transition hover:bg-accent-dark active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply rounded-lg px-4 py-2 font-medium text-stone-300 transition hover:bg-white/10 hover:text-white;
+  }
+  .input {
+    @apply w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--text)] placeholder:text-stone-500;
+  }
+}
