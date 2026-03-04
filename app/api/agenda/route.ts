@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAgendaSemana, getAgendaMes, getAgendaAnotacoes, saveAgendaAnotacoes, setDiaFoi, addDiaTreino, removeDiaTreino } from "@/lib/db";
+import { getAgendaSemana, getAgendaMes, getAgendaAnotacoes, getBalancoMes, saveAgendaAnotacoes, setDiaFoi, addDiaTreino, removeDiaTreino } from "@/lib/db";
 import type { DiaAgenda, MesAgenda } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
       }
       const dias = getAgendaMes(ano, mes);
       const anotacoes = getAgendaAnotacoes(ano, mes);
-      const payload: MesAgenda = { ano, mes, dias, anotacoes };
+      const balanco = getBalancoMes(ano, mes);
+      const payload: MesAgenda = { ano, mes, dias, anotacoes, balanco };
       return NextResponse.json(payload);
     }
     const segParam = searchParams.get("segunda");
@@ -62,7 +63,8 @@ export async function POST(request: Request) {
       saveAgendaAnotacoes(body.ano, body.mes, body.texto ?? "");
       const dias = getAgendaMes(body.ano, body.mes);
       const anotacoes = getAgendaAnotacoes(body.ano, body.mes);
-      return NextResponse.json({ ano: body.ano, mes: body.mes, dias, anotacoes });
+      const balanco = getBalancoMes(body.ano, body.mes);
+      return NextResponse.json({ ano: body.ano, mes: body.mes, dias, anotacoes, balanco });
     }
     if (!data || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
       return NextResponse.json({ error: "Data inválida" }, { status: 400 });
@@ -85,7 +87,8 @@ export async function POST(request: Request) {
     if (typeof body.ano === "number" && typeof body.mes === "number") {
       const dias = getAgendaMes(body.ano, body.mes);
       const anotacoes = getAgendaAnotacoes(body.ano, body.mes);
-      return NextResponse.json({ ano: body.ano, mes: body.mes, dias, anotacoes });
+      const balanco = getBalancoMes(body.ano, body.mes);
+      return NextResponse.json({ ano: body.ano, mes: body.mes, dias, anotacoes, balanco });
     }
     const segunda = getSegundaFeira(new Date(data));
     const dias: DiaAgenda[] = getAgendaSemana(segunda);

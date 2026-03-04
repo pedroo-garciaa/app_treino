@@ -65,11 +65,18 @@ export interface SemanaAgenda {
   dias: DiaAgenda[];
 }
 
+export interface BalancoTreino {
+  id: string;
+  nome: string;
+  quantidade: number;
+}
+
 export interface MesAgenda {
   ano: number;
   mes: number;
   dias: DiaAgenda[];
   anotacoes?: string;
+  balanco?: BalancoTreino[];
 }
 
 // Resultados calculados (apenas leitura no front)

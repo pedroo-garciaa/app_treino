@@ -37,6 +37,8 @@ export default function AgendaPage() {
     }
   }, [ano, mes]);
 
+  const balanco = mesAgenda?.balanco ?? [];
+
   useEffect(() => {
     load();
   }, [load]);
@@ -99,6 +101,11 @@ export default function AgendaPage() {
   };
 
   const celulas: DiaAgenda[] = mesAgenda?.dias ?? [];
+  const diasIdos = celulas.filter((d) => d.foi).length;
+  // Alinhar o dia 1 do mês à coluna correta (segunda = 0, domingo = 6)
+  const primeiroDia = new Date(ano, mes - 1, 1);
+  const offsetSemana = primeiroDia.getDay() === 0 ? 6 : primeiroDia.getDay() - 1;
+  const gridItems: (DiaAgenda | null)[] = [...Array(offsetSemana).fill(null), ...celulas];
 
   if (loading) {
     return (
@@ -163,106 +170,122 @@ export default function AgendaPage() {
                     </div>
                   ))}
                 </div>
-                {/* Grid do mês: apenas os dias do mês, 7 colunas */}
+                {/* Grid do mês: células vazias no início + dias alinhados às colunas (SEG–DOM) */}
                 <div className="grid grid-cols-7 border-l border-t border-[var(--border)]">
-                  {celulas.map((dia) => (
-                    <div
-                      key={dia.data}
-                      className="min-h-[5.5rem] border-b border-r border-[var(--border)] border-dashed bg-[var(--surface-card)]/20 sm:min-h-[6.5rem]"
-                    >
-                      <article
-                        className={`flex h-full min-h-[5.25rem] flex-col p-2 sm:min-h-[6.25rem] sm:p-2.5 ${
-                          dia.data === hoje ? "bg-[var(--accent-soft)]" : "bg-[var(--bg)]"
-                        }`}
+                  {gridItems.map((dia, idx) =>
+                    dia === null ? (
+                      <div
+                        key={`vazio-${idx}`}
+                        className="min-h-[5.5rem] border-b border-r border-[var(--border)] border-dashed bg-[var(--surface-card)]/10 sm:min-h-[6.5rem]"
+                        aria-hidden
+                      />
+                    ) : (
+                      <div
+                        key={dia.data}
+                        className="min-h-[5.5rem] border-b border-r border-[var(--border)] border-dashed bg-[var(--surface-card)]/20 sm:min-h-[6.5rem]"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-[var(--text)]">
-                            {new Date(dia.data + "T12:00:00").getDate()}
-                          </span>
-                          {dia.data === hoje && (
-                            <span className="rounded bg-[var(--accent)]/30 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
-                              Hoje
+                        <article
+                          className={`flex h-full min-h-[5.25rem] flex-col p-2 sm:min-h-[6.25rem] sm:p-2.5 ${
+                            dia.data === hoje ? "bg-[var(--accent-soft)]" : "bg-[var(--bg)]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-[var(--text)]">
+                              {new Date(dia.data + "T12:00:00").getDate()}
                             </span>
-                          )}
-                        </div>
-                        <label className="mt-1.5 flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={dia.foi}
-                            onChange={() => toggleFoi(dia.data, dia.foi)}
-                            className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--accent)]"
-                          />
-                          <span className="text-xs text-[var(--muted)]">Fui</span>
-                        </label>
-                        <div className="mt-1 flex-1 min-h-0 space-y-1 overflow-hidden">
-                          {dia.treinos.slice(0, 3).map((t) => (
-                            <div
-                              key={t.id}
-                              className="flex items-center gap-1 rounded bg-[var(--surface)]/80 px-1.5 py-0.5 text-xs"
-                            >
-                              <Link
-                                href={`/treino/${t.id}`}
-                                className="min-w-0 flex-1 truncate text-[var(--accent)] hover:underline"
-                                title={t.nome}
+                            {dia.data === hoje && (
+                              <span className="rounded bg-[var(--accent)]/30 px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+                                Hoje
+                              </span>
+                            )}
+                          </div>
+                          <label className="mt-1.5 flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={dia.foi}
+                              onChange={() => toggleFoi(dia.data, dia.foi)}
+                              className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] text-[var(--accent)]"
+                            />
+                            <span className="text-xs text-[var(--muted)]">Fui</span>
+                          </label>
+                          <div className="mt-1.5">
+                            {addTreinoDia === dia.data ? (
+                              <select
+                                className="input w-full py-1.5 text-xs"
+                                value=""
+                                onChange={(e) => {
+                                  const id = e.target.value;
+                                  if (id) adicionarTreino(dia.data, id);
+                                }}
+                                onBlur={() => setAddTreinoDia(null)}
+                                autoFocus
                               >
-                                {t.nome}
-                              </Link>
-                              <button
-                                type="button"
-                                onClick={() => removerTreino(dia.data, t.id)}
-                                className="shrink-0 rounded p-0.5 hover:bg-red-500/20 hover:text-red-400"
-                                aria-label={`Remover ${t.nome}`}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                          {dia.treinos.length > 3 && (
-                            <span className="text-xs text-[var(--muted)]">+{dia.treinos.length - 3}</span>
-                          )}
-                        </div>
-                        <div className="mt-1.5">
-                          {addTreinoDia === dia.data ? (
-                            <select
-                              className="input w-full py-1.5 text-xs"
-                              value=""
-                              onChange={(e) => {
-                                const id = e.target.value;
-                                if (id) adicionarTreino(dia.data, id);
-                              }}
-                              onBlur={() => setAddTreinoDia(null)}
-                              autoFocus
-                            >
-                              <option value="">+ Treino</option>
-                              {treinos
-                                .filter((t) => !dia.treinos.some((dt) => dt.id === t.id))
-                                .map((t) => (
+                                <option value="">{dia.treinos.length ? "Trocar treino…" : "+ Treino"}</option>
+                                {treinos.map((t) => (
                                   <option key={t.id} value={t.id}>{t.nome}</option>
                                 ))}
-                              {treinos.filter((t) => !dia.treinos.some((dt) => dt.id === t.id)).length === 0 && (
-                                <option value="" disabled>Nenhum</option>
-                              )}
-                            </select>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setAddTreinoDia(dia.data)}
-                              className="w-full rounded-lg border border-dashed border-[var(--border)] py-1.5 text-xs text-[var(--muted)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
-                            >
-                              + Treino
-                            </button>
-                          )}
-                        </div>
-                      </article>
+                                {treinos.length === 0 && (
+                                  <option value="" disabled>Nenhum treino</option>
+                                )}
+                              </select>
+                            ) : dia.treinos.length > 0 ? (
+                              <Link
+                                href={`/treino/${dia.treinos[0].id}`}
+                                className="block rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)]/60 px-2 py-1.5 break-words text-sm font-semibold leading-tight text-[var(--accent)] hover:underline line-clamp-2"
+                                title={dia.treinos[0].nome}
+                              >
+                                {dia.treinos[0].nome}
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setAddTreinoDia(dia.data)}
+                                className="w-full rounded-lg border border-dashed border-[var(--border)] py-1.5 text-xs text-[var(--muted)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+                              >
+                                + Treino
+                              </button>
+                            )}
+                          </div>
+                        </article>
                     </div>
-                  ))}
+                  )
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Anotacoes ao lado em desktop */}
-            <aside className="w-full shrink-0 lg:w-80">
-              <div className="card sticky top-4 flex flex-col lg:min-h-[420px]">
+            {/* Balanço do mês + Anotações */}
+            <aside className="w-full shrink-0 lg:w-80 space-y-6">
+              <div className="card">
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                  Balanço do mês
+                </h2>
+                <p className="mb-2 rounded-lg bg-[var(--surface)]/80 px-3 py-2 text-sm">
+                  <span className="text-[var(--muted)]">Dias idos: </span>
+                  <span className="font-semibold tabular-nums text-[var(--text)]">{diasIdos}</span>
+                </p>
+                <p className="mb-3 text-xs text-[var(--muted)]">
+                  Quantidade de cada treino feito (dias com &quot;Fui&quot; marcado e esse treino no dia).
+                </p>
+                {balanco.length === 0 ? (
+                  <p className="text-sm text-[var(--muted)]">Nenhum treino registado ainda neste mês.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {balanco.map((b) => (
+                      <li
+                        key={b.id}
+                        className="flex items-center justify-between rounded-lg bg-[var(--surface)]/80 px-3 py-2 text-sm"
+                      >
+                        <Link href={`/treino/${b.id}`} className="font-medium text-[var(--accent)] hover:underline truncate min-w-0 mr-2">
+                          {b.nome}
+                        </Link>
+                        <span className="shrink-0 font-semibold text-[var(--text)] tabular-nums">{b.quantidade}×</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="card sticky top-4 flex flex-col lg:min-h-[320px]">
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
                   Anotações
                 </label>
@@ -280,30 +303,6 @@ export default function AgendaPage() {
               </div>
             </aside>
           </div>
-
-          {/* Treinos cadastrados em baixo */}
-          {treinos.length > 0 && (
-            <section className="card shrink-0">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-                Treinos cadastrados
-              </h3>
-              <ul className="flex flex-wrap gap-2">
-                {treinos.map((t) => (
-                  <li key={t.id}>
-                    <Link
-                      href={`/treino/${t.id}`}
-                      className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
-                    >
-                      {t.nome}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-[var(--muted)]">
-                Use &quot;+ Treino&quot; em cada dia do calendário para associar um treino.
-              </p>
-            </section>
-          )}
         </>
       )}
     </main>

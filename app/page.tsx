@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTreinos } from "@/hooks/useTreinos";
 import { api } from "@/lib/api";
 import { formatarData } from "@/lib/utils";
 
 export default function HomePage() {
-  const { treinos, loaded, error, refresh } = useTreinos();
+  const { treinos, loaded, error, refresh, deleteTreino } = useTreinos();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loaded) return;
@@ -52,12 +53,10 @@ export default function HomePage() {
         <ul className="space-y-3">
           {treinos.map((t) => {
             const exercicios = Array.isArray(t.exercicios) ? t.exercicios : [];
+            const isConfirming = confirmDeleteId === t.id;
             return (
-              <li key={t.id}>
-                <Link
-                  href={`/treino/${t.id}`}
-                  className="card flex items-center justify-between transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-card)]/80"
-                >
+              <li key={t.id} className="card flex items-center justify-between gap-3 transition hover:border-[var(--accent)]/50 hover:bg-[var(--surface-card)]/80">
+                <Link href={`/treino/${t.id}`} className="min-w-0 flex-1">
                   <div>
                     <p className="font-medium text-[var(--text)]">{t.nome}</p>
                     <p className="text-sm text-[var(--muted)]">
@@ -66,8 +65,29 @@ export default function HomePage() {
                       {formatarData(t.atualizadoEm)}
                     </p>
                   </div>
-                  <span className="text-[var(--muted)]">→</span>
                 </Link>
+                <span className="text-[var(--muted)]">→</span>
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isConfirming) {
+                      await deleteTreino(t.id);
+                      setConfirmDeleteId(null);
+                    } else {
+                      setConfirmDeleteId(t.id);
+                    }
+                  }}
+                  className={
+                    isConfirming
+                      ? "shrink-0 rounded-lg bg-red-600 px-2 py-1.5 text-xs text-white"
+                      : "shrink-0 rounded-lg px-2 py-1.5 text-xs text-[var(--muted)] hover:bg-red-500/20 hover:text-red-400"
+                  }
+                  title={isConfirming ? "Clique de novo para excluir" : "Excluir"}
+                >
+                  {isConfirming ? "Excluir?" : "Excluir"}
+                </button>
               </li>
             );
           })}

@@ -261,9 +261,11 @@ export function setDiaFoi(data: string, foi: boolean): void {
   database.prepare("INSERT INTO dia_academia (data, foi) VALUES (?, ?) ON CONFLICT(data) DO UPDATE SET foi = ?").run(data, foi ? 1 : 0, foi ? 1 : 0);
 }
 
+/** Um único treino por dia: ao adicionar, substitui qualquer treino já associado a esse dia. */
 export function addDiaTreino(data: string, treinoId: string): void {
   const database = getDb();
-  database.prepare("INSERT OR IGNORE INTO dia_treino (data, treino_id) VALUES (?, ?)").run(data, treinoId);
+  database.prepare("DELETE FROM dia_treino WHERE data = ?").run(data);
+  database.prepare("INSERT INTO dia_treino (data, treino_id) VALUES (?, ?)").run(data, treinoId);
 }
 
 export function removeDiaTreino(data: string, treinoId: string): void {
@@ -287,6 +289,24 @@ export function getAgendaMes(ano: number, mes: number): DiaAgenda[] {
     });
   }
   return dias;
+}
+
+/** Balanço do mês: quantidade de vezes que cada treino foi feito (dias com checkbox "foi" marcado e esse treino no dia). */
+export function getBalancoMes(ano: number, mes: number): { id: string; nome: string; quantidade: number }[] {
+  const database = getDb();
+  const primeiro = `${ano}-${String(mes).padStart(2, "0")}-01`;
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const ultimo = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+  const rows = database.prepare(`
+    SELECT t.id, t.nome, COUNT(*) AS quantidade
+    FROM treinos t
+    JOIN dia_treino dt ON dt.treino_id = t.id
+    JOIN dia_academia da ON da.data = dt.data AND da.foi = 1
+    WHERE dt.data >= ? AND dt.data <= ?
+    GROUP BY t.id, t.nome
+    ORDER BY t.nome
+  `).all(primeiro, ultimo) as { id: string; nome: string; quantidade: number }[];
+  return rows;
 }
 
 export function getAgendaAnotacoes(ano: number, mes: number): string {
