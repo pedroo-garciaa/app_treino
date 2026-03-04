@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAllTreinos, saveTreino } from "@/lib/db";
 import type { Treino } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const treinos = getAllTreinos();

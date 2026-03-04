@@ -84,3 +84,52 @@ export function getTreinosAvancados(): Treino[] {
     },
   ];
 }
+
+/** Push / Pull / Legs */
+export function getTreinosPPL(): Treino[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: "seed-push",
+      nome: "PUSH (Peito, Ombro, Tríceps)",
+      criadoEm: now,
+      atualizadoEm: now,
+      exercicios: [
+        exercicio("seed-push", "Supino reto com barra", 4, 0),
+        exercicio("seed-push", "Supino inclinado com halteres", 3, 1),
+        exercicio("seed-push", "Desenvolvimento com halteres ou barra", 3, 2),
+        exercicio("seed-push", "Elevação lateral", 3, 3),
+        exercicio("seed-push", "Tríceps na polia (corda)", 3, 4),
+        exercicio("seed-push", "Tríceps francês ou mergulho em banco", 3, 5),
+      ],
+    },
+    {
+      id: "seed-pull",
+      nome: "PULL (Costas, Bíceps, Posterior de Ombro)",
+      criadoEm: now,
+      atualizadoEm: now,
+      exercicios: [
+        exercicio("seed-pull", "Barra fixa (ou puxada na frente)", 4, 0),
+        exercicio("seed-pull", "Puxada na frente na polia", 3, 1),
+        exercicio("seed-pull", "Remada curvada com barra", 3, 2),
+        exercicio("seed-pull", "Face pull", 3, 3),
+        exercicio("seed-pull", "Rosca direta com barra", 3, 4),
+        exercicio("seed-pull", "Rosca alternada com halteres", 3, 5),
+      ],
+    },
+    {
+      id: "seed-legs",
+      nome: "LEGS (Pernas Completas)",
+      criadoEm: now,
+      atualizadoEm: now,
+      exercicios: [
+        exercicio("seed-legs", "Agachamento livre", 4, 0),
+        exercicio("seed-legs", "Leg press", 3, 1),
+        exercicio("seed-legs", "Cadeira extensora", 3, 2),
+        exercicio("seed-legs", "Mesa flexora", 3, 3),
+        exercicio("seed-legs", "Stiff (levantamento romeno)", 3, 4),
+        exercicio("seed-legs", "Panturrilha em pé ou sentado", 4, 5),
+      ],
+    },
+  ];
+}

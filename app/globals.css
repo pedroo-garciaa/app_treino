@@ -2,15 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tema KODHEX — baseado na logo (gradiente verde-azulado → roxo) */
 :root {
-  --bg: #0c0a09;
-  --surface: #1c1917;
-  --surface-card: #292524;
-  --border: #44403c;
-  --text: #fafaf9;
-  --muted: #a8a29e;
-  --accent: #f97316;
-  --accent-hover: #ea580c;
+  --bg: #0f0a18;
+  --surface: #1a1228;
+  --surface-card: #251b38;
+  --border: #3d3254;
+  --text: #f5f3ff;
+  --muted: #a89ec9;
+  --accent: #7adec4;
+  --accent-hover: #5dc9b0;
+  --accent-ring: rgba(122, 222, 196, 0.5);
+  --accent-soft: rgba(122, 222, 196, 0.15);
+  --purple-mid: #8a72e8;
+  --purple-dark: #5d2fa3;
 }
 
 body {
@@ -19,7 +24,11 @@ body {
 }
 
 input, select, button {
-  @apply outline-none focus:ring-2 focus:ring-accent/50 focus:ring-offset-2 focus:ring-offset-[var(--bg)];
+  @apply outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--bg)];
+}
+
+input:focus, select:focus, button:focus {
+  --tw-ring-color: var(--accent-ring);
 }
 
 @layer components {
@@ -27,12 +36,12 @@ input, select, button {
     @apply rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 shadow-lg;
   }
   .btn-primary {
-    @apply rounded-lg bg-accent px-4 py-2 font-medium text-white transition hover:bg-accent-dark active:scale-[0.98];
+    @apply rounded-lg bg-[var(--accent)] px-4 py-2 font-medium text-[var(--purple-dark)] transition hover:bg-[var(--accent-hover)] active:scale-[0.98];
   }
   .btn-ghost {
-    @apply rounded-lg px-4 py-2 font-medium text-stone-300 transition hover:bg-white/10 hover:text-white;
+    @apply rounded-lg px-4 py-2 font-medium text-[var(--muted)] transition hover:bg-[var(--accent-soft)] hover:text-[var(--accent)];
   }
   .input {
-    @apply w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--text)] placeholder:text-stone-500;
+    @apply w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--text)] placeholder:text-[var(--muted)];
   }
 }

@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import type { Treino, Exercicio, Serie } from "./types";
+import type { Treino, Exercicio, Serie, PerfilUsuario, DadosCorporais, NivelAtividade, DiaAgenda } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "treino.db");
@@ -44,6 +44,38 @@ function initSchema(database: Database.Database) {
     );
     CREATE INDEX IF NOT EXISTS idx_exercicios_treino ON exercicios(treino_id);
     CREATE INDEX IF NOT EXISTS idx_series_exercicio ON series(exercicio_id);
+    CREATE TABLE IF NOT EXISTS perfil (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      nome TEXT NOT NULL DEFAULT '',
+      unidade_peso TEXT NOT NULL DEFAULT 'kg' CHECK (unidade_peso IN ('kg', 'lb'))
+    );
+    INSERT OR IGNORE INTO perfil (id, nome, unidade_peso) VALUES (1, '', 'kg');
+    CREATE TABLE IF NOT EXISTS dados_corporais (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      peso_kg REAL,
+      altura_cm REAL,
+      idade INTEGER,
+      sexo TEXT CHECK (sexo IN ('M', 'F')),
+      nivel_atividade TEXT CHECK (nivel_atividade IN ('sedentario', 'leve', 'moderado', 'ativo', 'muito_ativo'))
+    );
+    INSERT OR IGNORE INTO dados_corporais (id) VALUES (1);
+    CREATE TABLE IF NOT EXISTS dia_academia (
+      data TEXT PRIMARY KEY,
+      foi INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS dia_treino (
+      data TEXT NOT NULL,
+      treino_id TEXT NOT NULL,
+      PRIMARY KEY (data, treino_id),
+      FOREIGN KEY (treino_id) REFERENCES treinos(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_dia_treino_data ON dia_treino(data);
+    CREATE TABLE IF NOT EXISTS agenda_anotacoes (
+      ano INTEGER NOT NULL,
+      mes INTEGER NOT NULL,
+      texto TEXT NOT NULL DEFAULT '',
+      PRIMARY KEY (ano, mes)
+    );
   `);
 }
 
@@ -148,4 +180,122 @@ export function seedTreinosAvancados(treinos: Treino[]): number {
     }
   }
   return added;
+}
+
+const PERFIL_ID = 1;
+
+export function getPerfil(): PerfilUsuario {
+  const database = getDb();
+  const row = database.prepare("SELECT nome, unidade_peso FROM perfil WHERE id = ?").get(PERFIL_ID) as { nome: string; unidade_peso: string } | undefined;
+  if (!row) return { nome: "", unidadePeso: "kg" };
+  return {
+    nome: row.nome ?? "",
+    unidadePeso: (row.unidade_peso === "lb" ? "lb" : "kg") as PerfilUsuario["unidadePeso"],
+  };
+}
+
+export function savePerfil(perfil: PerfilUsuario): PerfilUsuario {
+  const database = getDb();
+  database.prepare("UPDATE perfil SET nome = ?, unidade_peso = ? WHERE id = ?").run(perfil.nome, perfil.unidadePeso, PERFIL_ID);
+  return perfil;
+}
+
+const DADOS_CORPORAIS_ID = 1;
+
+export function getDadosCorporais(): DadosCorporais | null {
+  const database = getDb();
+  const row = database.prepare(
+    "SELECT peso_kg, altura_cm, idade, sexo, nivel_atividade FROM dados_corporais WHERE id = ?"
+  ).get(DADOS_CORPORAIS_ID) as { peso_kg: number | null; altura_cm: number | null; idade: number | null; sexo: string | null; nivel_atividade: string | null } | undefined;
+  if (!row || row.peso_kg == null || row.altura_cm == null || row.idade == null || !row.sexo || !row.nivel_atividade) return null;
+  return {
+    pesoKg: row.peso_kg,
+    alturaCm: row.altura_cm,
+    idade: row.idade,
+    sexo: row.sexo === "F" ? "F" : "M",
+    nivelAtividade: (row.nivel_atividade || "moderado") as NivelAtividade,
+  };
+}
+
+export function saveDadosCorporais(dados: DadosCorporais): DadosCorporais {
+  const database = getDb();
+  database.prepare(
+    "UPDATE dados_corporais SET peso_kg = ?, altura_cm = ?, idade = ?, sexo = ?, nivel_atividade = ? WHERE id = ?"
+  ).run(dados.pesoKg, dados.alturaCm, dados.idade, dados.sexo, dados.nivelAtividade, DADOS_CORPORAIS_ID);
+  return dados;
+}
+
+// --- Agenda semanal (segunda = 0, domingo = 6)
+function getSegundaFeira(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T12:00:00");
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export function getAgendaSemana(segundaFeira: string): DiaAgenda[] {
+  const database = getDb();
+  const dias: DiaAgenda[] = [];
+  for (let i = 0; i < 7; i++) {
+    const data = addDays(segundaFeira, i);
+    const row = database.prepare("SELECT foi FROM dia_academia WHERE data = ?").get(data) as { foi: number } | undefined;
+    const treinoRows = database.prepare("SELECT t.id, t.nome FROM dia_treino dt JOIN treinos t ON t.id = dt.treino_id WHERE dt.data = ? ORDER BY t.nome").all(data) as { id: string; nome: string }[];
+    dias.push({
+      data,
+      foi: Boolean(row?.foi),
+      treinos: treinoRows,
+    });
+  }
+  return dias;
+}
+
+export function setDiaFoi(data: string, foi: boolean): void {
+  const database = getDb();
+  database.prepare("INSERT INTO dia_academia (data, foi) VALUES (?, ?) ON CONFLICT(data) DO UPDATE SET foi = ?").run(data, foi ? 1 : 0, foi ? 1 : 0);
+}
+
+export function addDiaTreino(data: string, treinoId: string): void {
+  const database = getDb();
+  database.prepare("INSERT OR IGNORE INTO dia_treino (data, treino_id) VALUES (?, ?)").run(data, treinoId);
+}
+
+export function removeDiaTreino(data: string, treinoId: string): void {
+  const database = getDb();
+  database.prepare("DELETE FROM dia_treino WHERE data = ? AND treino_id = ?").run(data, treinoId);
+}
+
+export function getAgendaMes(ano: number, mes: number): DiaAgenda[] {
+  const database = getDb();
+  const ultimoDia = new Date(ano, mes, 0);
+  const totalDias = ultimoDia.getDate();
+  const dias: DiaAgenda[] = [];
+  for (let d = 1; d <= totalDias; d++) {
+    const data = `${ano}-${String(mes).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const row = database.prepare("SELECT foi FROM dia_academia WHERE data = ?").get(data) as { foi: number } | undefined;
+    const treinoRows = database.prepare("SELECT t.id, t.nome FROM dia_treino dt JOIN treinos t ON t.id = dt.treino_id WHERE dt.data = ? ORDER BY t.nome").all(data) as { id: string; nome: string }[];
+    dias.push({
+      data,
+      foi: Boolean(row?.foi),
+      treinos: treinoRows,
+    });
+  }
+  return dias;
+}
+
+export function getAgendaAnotacoes(ano: number, mes: number): string {
+  const database = getDb();
+  const row = database.prepare("SELECT texto FROM agenda_anotacoes WHERE ano = ? AND mes = ?").get(ano, mes) as { texto: string } | undefined;
+  return row?.texto ?? "";
+}
+
+export function saveAgendaAnotacoes(ano: number, mes: number, texto: string): void {
+  const database = getDb();
+  database.prepare("INSERT INTO agenda_anotacoes (ano, mes, texto) VALUES (?, ?, ?) ON CONFLICT(ano, mes) DO UPDATE SET texto = ?").run(ano, mes, texto, texto);
 }

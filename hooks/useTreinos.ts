@@ -13,9 +13,15 @@ export function useTreinos() {
     setError(null);
     try {
       const data = await api.getTreinos();
-      setTreinos(data);
+      setTreinos(Array.isArray(data) ? data : []);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar treinos");
+      const msg =
+        e instanceof Error && e.name === "AbortError"
+          ? "A requisição demorou demais. Verifique se o servidor está rodando (npm run dev) e tente de novo."
+          : e instanceof Error
+            ? e.message
+            : "Erro ao carregar treinos";
+      setError(msg);
       setTreinos([]);
     } finally {
       setLoaded(true);

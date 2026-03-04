@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -8,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "App Treino — Controle de Academia",
+  title: "KODHEX — App Treino",
   description: "Controle de treinos, carga, séries e repetições",
 };
 
@@ -19,18 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={outfit.variable}>
-      <body className="min-h-screen font-sans">
-        <div className="mx-auto max-w-2xl px-4 py-6 pb-20">
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              App Treino
-            </h1>
-            <p className="mt-1 text-sm text-stone-400">
-              Controle de carga, séries e repetições
-            </p>
-          </header>
-          {children}
-        </div>
+      <body className="min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased">
+        <Sidebar />
+        <main className="min-h-screen lg:pl-64">
+          <div className="mx-auto w-full max-w-5xl px-4 py-6 pb-20 pt-14 lg:pt-6">
+            {children}
+          </div>
+        </main>
       </body>
     </html>
   );

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { seedTreinosAvancados } from "@/lib/db";
-import { getTreinosAvancados } from "@/lib/seedData";
+import { getTreinosAvancados, getTreinosPPL } from "@/lib/seedData";
 
 export async function POST() {
   try {
-    const treinos = getTreinosAvancados();
+    const treinos = [...getTreinosAvancados(), ...getTreinosPPL()];
     const added = seedTreinosAvancados(treinos);
     return NextResponse.json({
       added,

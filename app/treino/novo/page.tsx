@@ -72,14 +72,14 @@ export default function NovoTreinoPage() {
         <Link href="/" className="btn-ghost">
           ← Voltar
         </Link>
-        <h2 className="text-lg font-semibold text-stone-200">
+        <h2 className="text-lg font-semibold text-[var(--text)]">
           Cadastrar novo treino
         </h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="mb-1 block text-sm font-medium text-stone-400">
+          <label className="mb-1 block text-sm font-medium text-[var(--muted)]">
             Nome do treino
           </label>
           <input
@@ -94,7 +94,7 @@ export default function NovoTreinoPage() {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label className="text-sm font-medium text-stone-400">
+            <label className="text-sm font-medium text-[var(--muted)]">
               Exercícios
             </label>
             <button
@@ -120,7 +120,7 @@ export default function NovoTreinoPage() {
                   />
                 </div>
                 <div className="w-24">
-                  <label className="mb-0.5 block text-xs text-stone-500">
+                  <label className="mb-0.5 block text-xs text-[var(--muted)]">
                     Séries
                   </label>
                   <input
